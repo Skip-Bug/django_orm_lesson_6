@@ -26,11 +26,12 @@ def serialize_tag(tag):
 
 def index(request):
 
-    posts = Post.objects.annotate(likes_count=Count('likes'))
+    posts = Post.objects.prefetch_related(
+        'author').annotate(likes_count=Count('likes')
+                           )
     most_popular_posts = posts.order_by('-likes_count')[:5]
 
-    fresh_posts = Post.objects.order_by('published_at')
-    most_fresh_posts = list(fresh_posts)[-5:]
+    most_fresh_posts = posts.order_by('-published_at')[:5]
 
     tags = Tag.objects.annotate(posts_count=Count('posts'))
     most_popular_tags = tags.order_by('-posts_count')[:5]
@@ -75,7 +76,9 @@ def post_detail(request, slug):
     tags = Tag.objects.annotate(posts_count=Count('posts'))
     most_popular_tags = tags.order_by('-posts_count')[:5]
 
-    posts = Post.objects.annotate(likes_count=Count('likes'))
+    posts = Post.objects.prefetch_related(
+        'author').annotate(likes_count=Count('likes')
+                           )
     most_popular_posts = posts.order_by('-likes_count')[:5]
 
     context = {
@@ -94,7 +97,9 @@ def tag_filter(request, tag_title):
     tags = Tag.objects.annotate(posts_count=Count('posts'))
     most_popular_tags = tags.order_by('-posts_count')[:5]
 
-    posts = Post.objects.annotate(likes_count=Count('likes'))
+    posts = Post.objects.prefetch_related(
+        'author').annotate(likes_count=Count('likes')
+                           )
     most_popular_posts = posts.order_by('-likes_count')[:5]
 
     related_posts = tag.posts.all()[:20]
