@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Count, Prefetch
 from django.urls import reverse
 from django.contrib.auth.models import User
 
@@ -14,7 +15,7 @@ class PostQuerySet(models.QuerySet):
 
     def popular(self):
         like_count = (
-            self.annotate(likes_count=models.Count('likes'))
+            self.annotate(likes_count=Count('likes'))
             .order_by('-likes_count')
         )
         return like_count
@@ -24,7 +25,7 @@ class PostQuerySet(models.QuerySet):
         post_ids = [post.id for post in posts]
         posts_with_comments = (
             Post.objects.filter(id__in=post_ids)
-            .annotate(comments_count=models.Count('comments'))
+            .annotate(comments_count=Count('comments'))
         )
         ids_and_comments = posts_with_comments.values_list(
             'id', 'comments_count'
@@ -34,27 +35,22 @@ class PostQuerySet(models.QuerySet):
             post.comments_count = count_for_id[post.id]
         return posts
 
+    def with_annotated_tags(self):
+        return self.prefetch_related(
+            Prefetch(
+                'tags',
+                queryset=Tag.objects.annotate(posts_count=Count('posts'))
+            )
+        )
+
 
 class TagQuerySet(models.QuerySet):
     def popular(self):
         tag_count = (
-            self.annotate(posts_count=models.Count('posts'))
+            self.annotate(posts_count=Count('posts'))
             .order_by('-posts_count')
         )
         return tag_count
-
-    def fetch_with_posts_count(self):
-        tags = list(self)
-        tag_ids = [tag.id for tag in tags]
-        tags_with_count = (
-            Tag.objects.filter(id__in=tag_ids)
-            .annotate(posts_count=models.Count('posts'))
-        )
-        ids_and_posts = tags_with_count.values_list('id', 'posts_count')
-        count_for_id = dict(ids_and_posts)
-        for tag in tags:
-            tag.posts_count = count_for_id[tag.id]
-        return tags
 
 
 class Post(models.Model):
