@@ -49,7 +49,6 @@ def index(request):
         Post.objects.annotate(comments_count=Count('comments'))
         .order_by('-published_at')[:5]
         .prefetch_related('author', 'tags')
-
     )
     most_popular_posts = (
         Post.objects.popular()
