@@ -21,9 +21,9 @@ def serialize_post(post):
 
 
 def serialize_tag(tag):
-    if hasattr(tag, 'posts_count'):
+    try:
         posts_count = tag.posts_count
-    else:
+    except AttributeError:
         posts_count = tag.posts.count()
     return {
         'title': tag.title,
@@ -75,7 +75,7 @@ def post_detail(request, slug):
             'author': comment.author.username,
         })
 
-    related_tags = post.tags.all()
+    related_tags = post.tags.annotate(posts_count=Count('posts'))
 
     serialized_post = {
         'title': post.title,
